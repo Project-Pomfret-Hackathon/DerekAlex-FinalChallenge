@@ -1,4 +1,5 @@
 import math
+import numpy as np
 import tkinter as tk
 
 DELAY = 100
@@ -10,7 +11,7 @@ cos = lambda degs: math.cos(math.radians(degs))
 class Celestial(object):
     COS_0, COS_180 = cos(0), cos(180)
     SIN_90, SIN_270 = sin(90), sin(270)
-    mass=10
+    m=10
     def __init__(self, x, y, radius):
         self.x, self.y = x, y
         self.radius = radius
@@ -34,9 +35,23 @@ def update_position(canvas, id, celestial_obj, path_iter):
     canvas.after(DELAY, update_position, canvas, id, celestial_obj, path_iter)
 
 def inc_m():
-    print("mass incresed!")
+    print("mass increased!")
     for i in range(NumBod):
         Planets[i].mass+=5
+
+#a is star; b is planet - goes both for calcvel and calcfor
+def CalcVel(a,b):
+    a_pos=[a.x,a.y]
+    b_pos=[b.x,b.y]
+    radius=math.dist(a_pos,b_pos)
+    return sqrt(np.G*a.m/radius)
+
+def CalcFor(a,b):
+    a_pos=[a.x,a.y]
+    b_pos=[b.x,b.y]
+    radius=math.dist(a_pos,b_pos)
+    G=np.G
+    return G*a.m*b.m/((radius)*(radius))
 
 root = tk.Tk()
 root.title("Orbit")
@@ -47,6 +62,8 @@ canvas.pack()
 NumBod=4
 Planets=[]
 Display=[]
+
+
 
 for i in range(NumBod):
     Planets.append(Celestial(250+150+i*30,250+i*30,15))
