@@ -10,7 +10,7 @@ cos = lambda degs: math.cos(math.radians(degs))
 class Celestial(object):
     COS_0, COS_180 = cos(0), cos(180)
     SIN_90, SIN_270 = sin(90), sin(270)
-
+    mass=10
     def __init__(self, x, y, radius):
         self.x, self.y = x, y
         self.radius = radius
@@ -33,20 +33,37 @@ def update_position(canvas, id, celestial_obj, path_iter):
     canvas.move(id, dx, dy) 
     canvas.after(DELAY, update_position, canvas, id, celestial_obj, path_iter)
 
+def inc_m():
+    print("mass incresed!")
+    for i in range(NumBod):
+        Planets[i].mass+=5
+
 root = tk.Tk()
 root.title("Orbit")
 
 canvas = tk.Canvas(root, bg='black', height=500, width=500)
 canvas.pack()
+#Set num
+NumBod=4
+Planets=[]
+Display=[]
+
+for i in range(NumBod):
+    Planets.append(Celestial(250+150+i*30,250+i*30,15))
 
 sol_obj = Celestial(250, 250, 25)
-planet_obj1 = Celestial(250+100, 250, 15)
 sol = canvas.create_oval(sol_obj.bounds(), fill='yellow', width=0)
-planet1 = canvas.create_oval(planet_obj1.bounds(), fill='blue', width=0)
-
-orbital_radius = math.hypot(sol_obj.x - planet_obj1.x, sol_obj.y - planet_obj1.y)
-path_iter = circular_path(sol_obj.x, sol_obj.y, orbital_radius, CIRCULAR_PATH_INCR)
-next(path_iter) 
-
-root.after(DELAY, update_position, canvas, planet1, planet_obj1, path_iter)
+for index, Celestial in enumerate(Planets):
+    Display.append(canvas.create_oval(Planets[index].bounds(),fill='blue',width=0))
+#for in range(NumBod):
+    
+#planet1 = canvas.create_oval(planet_obj1.bounds(), fill='blue', width=0)
+#planet2=canvas.create_oval(planet_obj2.bounds(),fil
+for index, Celestial in enumerate(Planets):
+    orbital_radius = math.hypot(sol_obj.x - Planets[index].x, sol_obj.y - Planets[index].y)
+    path_iter = circular_path(sol_obj.x, sol_obj.y, orbital_radius, CIRCULAR_PATH_INCR)
+    next(path_iter) 
+    root.after(DELAY, update_position, canvas, Display[index], Planets[index], path_iter)
+    
+tk.Button(root, text="increase mass",command=inc_m()).pack()
 root.mainloop()
