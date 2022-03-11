@@ -4,152 +4,207 @@ import random
 import math
 
 root = Tk()
-str = "Calculate the force between charges of 5.0 x 10^5C and 1.0 x 10^7C if they are 5.0 cm apart."
+Bodies = []
 
-root.wm_title(str) #window title
+Number = 2
+Distance = 10
+Mass = [15, 15]
+V0 = [np.array([0,0], dtype=float), np.array([0,0], dtype=float)]
+Elasticity = 1
+Problem = "Momentum"
 
-width=1500 #window sizes
-height=850
+
+
+
+root.wm_title("Ph_Sim") #window title
+
+width=800 #window sizes
+height=800
 
 canvas = Canvas(root, width=width, height=height, bg = "black") #create backround
 canvas.grid(row=0, column=0)
 
-class physics:
-    def __init__(Radius, Number, Charge, Distance, Mass, Elasticity, Gravity, Force, V0, Satellite, Px0, Py0):
-
-class CoulombsLaw(physics): #class for problem type
-    def __init__(self, Radius, Number, Charge, Distance):
 
 
-
-
-
-
-
-
-touched = False
-
-Radius = 7 #radius of ball
-n_Bodies = 80 #number of objects
-PosNeg = 40 #relitave charges of each body
-xspawn_min = Radius #spawn locations
-xspawn_max =width-Radius
-yspawn_min =Radius
-yspawn_max =height-Radius
-wall_collide = .3 #wall collission dampening
-ball_colide = 1 #ball dampening
-G = 5
-
-
-
-canvas = Canvas(root, width=width, height=height, bg = "black") #creat backround
-canvas.grid(row=0, column=0)
-
-
-Pos_Bodies = [] #define empty lists for ball separation
-Neg_Bodies = []
-Total_Bodies = []
-
-
-class Body:
-    def __init__(self, Charge, Px, Py, V, Radius, touched): ##define variables of body
+class physics: #perent class that defs vars for all future classes
+    def __init__(self, Mass, Elasticity, Gravity, V0):
         self.Charge = Charge
-        self.Px = Px
-        self.Py = Py
-        self.P = np.array([self.Px, self.Py], dtype=float) #set position as array of xy
-        self.V = np.array(V, dtype=float) #set velocity as array
-        self.R = Radius #set radius
-        self.touched = touched
+        self.Mass = Mass
+        self.Elasticity = Elasticity
+        self.Gravity = Gravity
+        self.Force = Force
+        self.Velocity = np.array(V0, dtype=float)
+        self.Satellite = Satellite
 
 
 
-    def Fg(self, other, n_bodies, Pos_Bodies, Radius, touched): #function for calculating the force of gravity between two objects
 
+
+class Momentum(physics):
+    def __init__(self, Mass, V0, Elasticity, PositionX, PossitonY):
+        self.Width = 10+Mass
+        self.PositionX = PositionX #position will be calced in IF block
+        self.PositionY = PositionY
+        self.Position = np.array([self.PositionX, self.PositionY], dtype=float)
+        self.Velocity = np.array(V0, dtype=float)
+        self.Mass = Mass
+        self.Elasticity = Elasticity
+
+
+    def Function(self, other):##apply function to bodies #built for checking self against other
         if self == other:
             self.dv = np.array([0,0], dtype=float)
+
         else:
-            self.dist = math.sqrt((self.P[0]-other.P[0])**2 + (self.P[1]-other.P[1])**2) #get dist between both using pythag Th
-            self.dv = np.array([0,0], dtype=float) #define delta v
-            if self.dist == 0: #dont / 0
+            ##calc dist between two objects
+            self.dist = math.sqrt((self.Position[0]-other.Position[0])**2 + (self.Position[1]-other.Position[1])**2)
+            #start with 0 change in v
+            self.dv = np.array([0,0], dtype=float)
+            if self.dist == 0: #safety to not div by 0
                 self.dv = 0
             else:
-                self.F = ((G * (self.Charge * other.Charge)) / self.dist**2) * (self.P - other.P) / self.dist #define force as ESF equation
-                self.dv = self.F / abs(self.Charge) #define change in v as force / mass
-                if self.dist < self.R*2: #if touching
-                    if self.Charge != other.Charge:
-                        self.touched = True
-                        other.touched = True
-                    else:
-                        self.dv *= -ball_colide #bounce
-                        # if self.Charge > 0:
-                        #     Pos_Bodies.append(Body(PosNeg, random.randrange(Radius,width+Radius), random.randrange(Radius,width+Radius), [(random.randrange(-100,100)/20), (random.randrange(-100,100)/20)], Radius, touched))
-                        # if self.Charge < 0:
-                        #     Neg_Bodies.append(Body(-PosNeg, random.randrange(Radius,width+Radius), random.randrange(Radius,width+Radius), [(random.randrange(-100,100)/20), (random.randrange(-100,100)/20)], Radius, touched))
+                if self.dist<=((self.Width/2)+(other.Width/2)): #if touching
+                    self.Force = (self.Elasticity*((self.Mass*self.Velocity)-(other.Mass*other.Velocity)))
+                    self.dv =  self.Force / self.Mass
+
+            self.Velocity += self.dv
+
+        if self.Position[0] < self.Width/2: #wall collision
+            self.Velocity[0] *= -Elasticity
+            self.Position[0] += 1
+
+        if self.Position[0] > width - (self.Width/2):
+            self.Velocity[0] *= -Elasticity
+            self.Position[0] -= 1
+
+        if self.Position[1] < self.Width/2:
+            self.Velocity[1] *= -Elasticity
+            self.Position[1] += 1
+
+        if self.Position[1] < height - (self.Width/2):
+            self.Velocity[1] *= -Elasticity
+            self.Position[1] -= 1
 
 
 
-                self.V += self.dv #delta v to total v
+class Orbit(physics):
+    def __init__(self, Mass, V0, Elasticity, Distance, PositionX, PossitonY):
+        super().__init__(Mass, V0, Elasticity, Distance) #calls def on all of these
+        self.Width = Mass*2
+        self.PositionX = PositionX #position will be calced in IF block
+        self.PositionY = PositionY
+        self.Position = np.array([self.PositionX, self.PositionY], dtype=float)
 
-        if self.P[0] < self.R*2: ##wall check
-            self.V[0]*= -wall_collide
-            self.P[0] += 1
-        if self.P[0] > width - self.R*2:
-            self.V[0]*= -wall_collide
-            self.P[0] -= 1
-        if self.P[1] < self.R*2:
-            self.V[1]*= -wall_collide
-            self.P[1] += 1
-        if self.P[1] > height - self.R*2:
-            self.V[1]*= -wall_collide
-            self.P[1] -= 1
+    def Function(self, other):##apply function to bodies #built for checking self against other
+        if self == other:
+            self.dv = np.array([0,0], dtype=float)
 
-
-
-
-for i in range(n_Bodies): #define properties
-    if i%2 != 0:
-        Pos_Bodies.append(Body(PosNeg, random.randrange(Radius,width+Radius), random.randrange(Radius,width+Radius), [(random.randrange(-100,100)/20), (random.randrange(-100,100)/20)], Radius, touched))
-    else:
-        Neg_Bodies.append(Body(-PosNeg, random.randrange(Radius,width+Radius), random.randrange(Radius,width+Radius), [(random.randrange(-100,100)/20), (random.randrange(-100,100)/20)], Radius, touched))
-for P in Pos_Bodies:
-    Total_Bodies.append(P)
-for N in Neg_Bodies:
-    Total_Bodies.append(N)
-random.shuffle(Total_Bodies)
-
-
-T = 0 #define time itterator
-
-while True:
-    T+=1
-
-    canvas.delete("all") #clear for new calcs
-
-    for Body1 in Total_Bodies: #for each body ...
-        for Body2 in Total_Bodies: #check against all other bodies
-            Body1.Fg(Body2, n_Bodies, Pos_Bodies, Radius, touched)
-        Body1.P += Body1.V
-
-    for index, Body in enumerate(Neg_Bodies):#create shapes for + -  balls
-        if Body.touched == False:
-            canvas.create_oval(Body.P[0] - Body.R, Body.P[1] -Body.R, Body.P[0] + Body.R, Body.P[1] + Body.R, fill = 'black', outline = 'white') #create visible orbs from theoretical body
         else:
-            canvas.create_oval(Body.P[0] - Body.R, Body.P[1] -Body.R, Body.P[0] + Body.R, Body.P[1] + Body.R, fill = 'black', outline = 'white', tags='touching') #create visible orbs from theoretical body
-            Neg_Bodies.remove(Body)
-            Total_Bodies.remove(Body)
+            ##calc dist between two objects
+            self.dist = math.sqrt((self.Position[0]-other.Position[0])**2 + (self.Position[1]-other.Position[1])**2)
+            #start with 0 change in v
+            self.dv = np.array([0,0], dtype=float)
+            if self.dist == 0: #safety to not div by 0
+                self.dv = 0
+            else:
+                if self.dist<=((self.width/2)+(other.width/2)): #if touching
+                    self.Force = (self.Elasticity*((self.Mass*self.Velocity)-(other.Mass*other.Velocity)))
+                    self.dv =  self.Force / self.Mass
 
-    for index, Body in enumerate(Pos_Bodies):
-         if Body.touched == False:
-             canvas.create_oval(Body.P[0] - Body.R, Body.P[1] -Body.R, Body.P[0] + Body.R, Body.P[1] + Body.R, fill = 'white') #create visible orbs from theoretical body
-         else:
-             canvas.create_oval(Body.P[0] - Body.R, Body.P[1] -Body.R, Body.P[0] + Body.R, Body.P[1] + Body.R, fill = 'white', tags='touching') #create visible orbs from theoretical body
-             Pos_Bodies.remove(Body)
-             Total_Bodies.remove(Body)
+            self.V += self.dv
+
+        if self.Position[0] < self.Width/2: #wall collision
+            self.Velocity[0] *= -Elasticity
+            self.Position[0] += 1
+
+        if self.Position[0] > width - (self.Width/2):
+            self.Velocity[0] *= -Elasticity
+            self.Position[0] -= 1
+
+        if self.Position[1] < self.Width/2:
+            self.Velocity[1] *= -Elasticity
+            self.Position[1] += 1
+
+        if self.Position[1] < height - (self.Width/2):
+            self.Velocity[1] *= -Elasticity
+            self.Position[1] -= 1
 
 
 
-    canvas.delete('touching')
+class Electrostatic(physics):
+    def __init__(self, Mass, V0, Elasticity, Distance, PositionX, PossitonY):
+        super().__init__(Mass, V0, Elasticity, Distance) #calls def on all of these
+        self.Width = Mass*10
+        self.PositionX = PositionX #position will be calced in IF block
+        self.PositionY = PositionY
+        self.Position = np.array([self.PositionX, self.PositionY], dtype=float)
 
-    canvas.update() #itterate animation
+    def Function(self, other):##apply function to bodies #built for checking self against other
+        if self == other:
+            self.dv = np.array([0,0], dtype=float)
 
-mainloop()#loopsystem
+        else:
+            ##calc dist between two objects
+            self.dist = math.sqrt((self.Position[0]-other.Position[0])**2 + (self.Position[1]-other.Position[1])**2)
+            #start with 0 change in v
+            self.dv = np.array([0,0], dtype=float)
+            if self.dist == 0: #safety to not div by 0
+                self.dv = 0
+            else:
+                if self.dist<=((self.width/2)+(other.width/2)): #if touching
+                    self.Force = (self.Elasticity*((self.Mass*self.Velocity)-(other.Mass*other.Velocity)))
+                    self.dv =  self.Force / self.Mass
+
+            self.V += self.dv
+
+        if self.Position[0] < self.Width/2: #wall collision
+            self.Velocity[0] *= -Elasticity
+            self.Position[0] += 1
+
+        if self.Position[0] > width - (self.Width/2):
+            self.Velocity[0] *= -Elasticity
+            self.Position[0] -= 1
+
+        if self.Position[1] < self.Width/2:
+            self.Velocity[1] *= -Elasticity
+            self.Position[1] += 1
+
+        if self.Position[1] < height - (self.Width/2):
+            self.Velocity[1] *= -Elasticity
+            self.Position[1] -= 1
+
+
+if Problem == "Momentum":
+    distance = Distance*20
+    for i in range(Number):
+        #calc spawn location
+        if i%2 == 0:
+            PositionX = round(width/2)-round(distance/2)
+        else:
+            PositionX = round(width/2)+round(distance/2)
+        PositionY = (height/2)
+
+        Bodies.append(Momentum(Mass[i], V0[i], Elasticity, PositionX, PositionY))#create individual bodies with correct properties
+
+
+    while True:
+
+        canvas.delete("all")
+
+        for Body1 in Bodies:
+            for Body2 in Bodies:
+                Body1.Function(Body2)
+            Body1.Position += Body1.Velocity
+
+        for Body in Bodies:
+            canvas.create_rectangle(Body.Position[0] - (Body.Width/2), Body.Position[1]-(Body.Width), Body.Position[0]+(Body.Width/2), Body.Position[1]+(Body.Width), fill = 'white')
+
+
+        canvas.update()
+
+
+
+
+
+
+mainloop()
